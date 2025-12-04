@@ -1,5 +1,2 @@
-HELL BAVESH , CHECK IN GIYTSYNC !!
-
-I see who are you ?
-
+HELL BAVESH , CHECK IN GIYT
 Hellooooo ?
