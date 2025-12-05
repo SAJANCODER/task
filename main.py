@@ -284,7 +284,19 @@ def send_to_telegram(text, author, repo, branch, target_bot_token, target_chat_i
     except Exception as e:
         current_app.logger.error(f"❌ Error sending to Telegram: {e}", exc_info=True)
 
+ 
+        header = (
+            f"👤 <b>{html.escape(author)}</b>\n"
+            f"📂 <b>{html.escape(repo)}</b> (<code>{html.escape(branch)}</code>)\n"
+            f"🕒 {display_timestamp}"
+        )
+        message_text = f"{header}\n\n{clean_text}"
 
+       
+        url = TELEGRAM_API_URL.format(token=target_bot_token)
+        requests.post(url, json=payload)
+        
+        current_app.logger.info(f"✅ Message delivered to {target_chat_id}")
 
 @app.before_first_request
 def setup():
