@@ -218,6 +218,72 @@ app.jinja_loader = DictLoader({
     'contact.html': contact_template,
     'messages.html': messages_template,
 })
+def generate_ai_analysis(commit_msg, file_summary_text):
+    # Prompt uses available file info (names) since content isn't fetched
+    prompt = f"""
+    You are an AI Code Reviewer. Analyze this commit data.
+    COMMIT DATA: 
+    Message: {commit_msg}
+    Files Changed: {file_summary_text}
+
+    INSTRUCTIONS:
+    1. Return valid HTML ONLY.
+    2. Telegram does NOT support <ul>, <ol>, or <li> tags. DO NOT USE THEM.
+    3. Use the text character "•" for bullet points.
+    4. Use <br> or newlines for line breaks.
+    5. Use <b> for bold, <i> for italic, <code> for code.
+
+    OUTPUT FORMAT:
+    <b>Review Status:</b> [Status]
+    <b>Summary:</b> [One sentence summary]
+    <b>Technical Context:</b> [List files using • bullet points]
+    """
+    try:
+        model = genai.GenerativeModel(MODEL_NAME)
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        current_app.logger.error(f"❌ Gemini Analysis Failed: {e}", exc_info=True)
+        return f"AI Analysis Failed: {e}"
+
+def send_to_telegram(text, author, repo, branch, target_bot_token, target_chat_id):
+    if not target_bot_token or not target_chat_id: return
+    try:
+        # CLEANUP: Remove markdown code blocks
+        clean_text = text.replace("```html", "").replace("```", "")
+        
+        # Sanitize HTML for Telegram
+        clean_text = clean_text.replace("<br>", "\n").replace("<br/>", "\n").replace("<br />", "\n")
+        clean_text = clean_text.replace("<ul>", "").replace("</ul>", "")
+        clean_text = clean_text.replace("<ol>", "").replace("</ol>", "")
+        clean_text = clean_text.replace("<li>", "• ").replace("</li>", "\n")
+        clean_text = clean_text.replace("<p>", "").replace("</p>", "\n\n")
+        
+        now_utc = datetime.utcnow()
+        IST_OFFSET = timedelta(hours=5, minutes=30)
+        ist_time = now_utc + IST_OFFSET
+        display_timestamp = ist_time.strftime('%I:%M %p')
+        
+        header = (
+            f"👤 <b>{html.escape(author)}</b>\n"
+            f"📂 <b>{html.escape(repo)}</b> (<code>{html.escape(branch)}</code>)\n"
+            f"🕒 {display_timestamp}"
+        )
+        message_text = f"{header}\n\n{clean_text}"
+
+        payload = {
+            "chat_id": target_chat_id,
+            "text": message_text,
+            "parse_mode": "HTML" 
+        }
+        
+        url = TELEGRAM_API_URL.format(token=target_bot_token)
+        requests.post(url, json=payload)
+        
+        current_app.logger.info(f"✅ Message delivered to {target_chat_id}")
+    except Exception as e:
+        current_app.logger.error(f"❌ Error sending to Telegram: {e}", exc_info=True)
+
 
 
 @app.before_first_request
