@@ -219,7 +219,7 @@ app.jinja_loader = DictLoader({
     'messages.html': messages_template,
 })
 def generate_ai_analysis(commit_msg, file_summary_text):
-    # Prompt uses available file info (names) since content isn't fetched
+    
     prompt = f"""
     You are an AI Code Reviewer. Analyze this commit data.
     COMMIT DATA: 
