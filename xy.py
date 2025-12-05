@@ -264,12 +264,7 @@ def send_to_telegram(text, author, repo, branch, target_bot_token, target_chat_i
         )
         message_text = f"{header}\n\n{clean_text}"
 
-        payload = {
-            "chat_id": target_chat_id,
-            "text": message_text,
-            "parse_mode": "HTML" 
-        }
-        
+       
         url = TELEGRAM_API_URL.format(token=target_bot_token)
         requests.post(url, json=payload)
         
