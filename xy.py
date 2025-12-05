@@ -238,14 +238,7 @@ def generate_ai_analysis(commit_msg, file_summary_text):
     <b>Summary:</b> [One sentence summary]
     <b>Technical Context:</b> [List files using • bullet points]
     """
-    try:
-        model = genai.GenerativeModel(MODEL_NAME)
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        current_app.logger.error(f"❌ Gemini Analysis Failed: {e}", exc_info=True)
-        return f"AI Analysis Failed: {e}"
-
+    
 def send_to_telegram(text, author, repo, branch, target_bot_token, target_chat_id):
     if not target_bot_token or not target_chat_id: return
     try:
